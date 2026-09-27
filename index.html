@@ -108,12 +108,15 @@
   }
   .nutri-sync:active{transform:scale(.94);}
   .nutri-sync:disabled{opacity:.5;}
-  /* invisible native date input — the "set" pill opens it */
+  /* the invisible native date input sits ON TOP of the set pill,
+     so the user's tap lands on the real input — the only way iOS
+     and Safari will open their native date picker */
+  .set-wrap{position:relative;display:inline-block;}
   .cycle-date-input{
-    position:absolute;width:1px;height:1px;opacity:0;
-    border:0;padding:0;pointer-events:none;
+    position:absolute;inset:0;width:100%;height:100%;
+    opacity:0;border:0;padding:0;margin:0;
+    -webkit-appearance:none;appearance:none;
   }
-  .nutri-right{position:relative;}
 
   /* Edit order */
   .week-head{display:flex;justify-content:flex-end;margin:12px 0 18px;}
@@ -273,8 +276,10 @@
     <span class="nutri-title">Eat today</span>
     <div class="nutri-right">
       <span class="nutri-phase" id="nutriPhase"></span>
-      <button class="nutri-sync" id="nutriSync">set</button>
-      <input type="date" id="cycleDateInput" class="cycle-date-input" aria-label="First day of last period">
+      <span class="set-wrap">
+        <button class="nutri-sync" id="nutriSync">set</button>
+        <input type="date" id="cycleDateInput" class="cycle-date-input" aria-label="First day of last period">
+      </span>
     </div>
   </div>
   <div class="nutri-focus" id="nutriFocus"></div>
@@ -290,7 +295,7 @@
 </div>
 
 
-<footer>2× cardio · 3× strength · 1× yoga · every week · v35</footer>
+<footer>2× cardio · 3× strength · 1× yoga · every week · v36</footer>
 
 <script>
 // ---------- Standalone storage ----------
@@ -824,6 +829,7 @@ function renderCycleGraph(){
 }
 
 function renderNutrition(){
+  cycleDateInput.value = cycleStart || '';
   const phaseEl = document.getElementById('nutriPhase');
   const day = cycleDayFor(viewDateKey);
   renderCycleGraph();
@@ -935,16 +941,10 @@ document.addEventListener('pointerup', async (e)=>{
 });
 
 // Set button: enter/update the period start date
-const nutriSync = document.getElementById('nutriSync');
-nutriSync.addEventListener('click', ()=>{
-  cycleDateInput.value = cycleStart || todayKey;  // picker opens on the saved date
-  if(cycleDateInput.showPicker){
-    try{ cycleDateInput.showPicker(); return; }catch(e){ /* fall through */ }
-  }
-  cycleDateInput.style.pointerEvents = 'auto';
-  cycleDateInput.focus();
-  cycleDateInput.click();
-  cycleDateInput.style.pointerEvents = 'none';
+// the tap goes straight to the overlaid native input; just make sure
+// the picker opens showing the currently saved date
+cycleDateInput.addEventListener('focus', ()=>{
+  if(!cycleDateInput.value){ cycleDateInput.value = cycleStart || todayKey; }
 });
 
 // ---------- GYM / HOME tab handling ----------
